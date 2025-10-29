@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌎 Jogo da Memória Sustentável ♻️</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- EFEITO DE PARTÍCULAS -->
+  <div class="particles"></div>
+
+  <!-- TELA INICIAL -->
+  <div class="overlay" id="start-screen">
+    <div class="overlay-content">
+      <h1>🌱 Jogo da Memória Sustentável ♻️</h1>
+      <p>Encontre os pares e aprenda a cuidar do planeta 🌍</p>
+      <button id="start-btn">🌿 Começar 🌿</button>
+    </div>
+  </div>
+
+  <!-- TELA FINAL -->
+  <div class="overlay" id="win-screen" style="display:none;">
+    <div class="overlay-content victory">
+      <h2>🎉 Parabéns! 🌎</h2>
+      <p>Você completou o jogo e ajudou o meio ambiente 💚</p>
+      <button id="restart-btn">🔁 Jogar Novamente</button>
+    </div>
+  </div>
+
+  <!-- CABEÇALHO -->
+  <header>
+    <div class="stats">
+      <span>⏱️ Tempo: <strong id="timer">0s</strong></span>
+      <span>🔄 Jogadas: <strong id="moves">0</strong></span>
+    </div>
+    <div class="message" id="message-box">🌿 Combine os pares ecológicos! ♻️</div>
+  </header>
+
+  <!-- TABULEIRO -->
+  <main class="game-container" id="game-board"></main>
+
+  <script>
+    const messages = [
+      "🌱 Você está ajudando o planeta!",
+      "🔥 Evite queimadas, proteja a natureza.",
+      "💧 Economize água, cada gota conta.",
+      "🌳 Plante árvores e respire melhor.",
+      "♻️ Reciclar é um ato de amor à Terra.",
+      "🚯 Não jogue lixo nas ruas.",
+      "🌞 Use energia solar e sustentável.",
+      "🐢 Diga não aos plásticos descartáveis!",
+      "💨 Preserve o ar limpo e puro.",
+      "🌍 Pequenas ações salvam o planeta!",
+      "🚲 Vá de bicicleta e cuide do ar.",
+      "🍃 Cuide da natureza, ela cuida de você.",
+      "🪴 Reduza, reutilize e recicle.",
+      "🌾 A terra agradece seu cuidado!",
+      "🌺 O futuro é verde e sustentável!",
+      "🌻 Você faz parte da mudança!"
+    ];
+
+    // EMOJIS DE SUSTENTABILIDADE E NATUREZA
+    const icons = [
+      { name: "reciclagem", symbol: "♻️" },
+      { name: "arvore", symbol: "🌳" },
+      { name: "agua", symbol: "💧" },
+      { name: "terra", symbol: "🌍" },
+      { name: "sol", symbol: "🌞" },
+      { name: "vento", symbol: "💨" },
+      { name: "flor", symbol: "🌸" },
+      { name: "folha", symbol: "🍃" },
+      { name: "fogo", symbol: "🔥" },
+      { name: "planta", symbol: "🪴" },
+      { name: "reciclar", symbol: "🔁" },
+      { name: "planeta", symbol: "🌎" },
+      { name: "bike", symbol: "🚲" },
+      { name: "semente", symbol: "🌱" },
+      { name: "energia", symbol: "⚡" },
+      { name: "mundo", symbol: "🌏" }
+    ];
+
+    let grid = [...icons, ...icons].sort(() => Math.random() - 0.5);
+    const board = document.getElementById("game-board");
+    const timerDisplay = document.getElementById("timer");
+    const movesDisplay = document.getElementById("moves");
+    const messageBox = document.getElementById("message-box");
+    const startScreen = document.getElementById("start-screen");
+    const winScreen = document.getElementById("win-screen");
+
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+    let moves = 0;
+    let matched = 0;
+    let time = 0;
+    let timer;
+
+    // Criar partículas (folhas flutuantes)
+    function createParticles() {
+      const container = document.querySelector('.particles');
+      for (let i = 0; i < 30; i++) {
+        const leaf = document.createElement('div');
+        leaf.classList.add('leaf');
+        leaf.style.left = `${Math.random() * 100}%`;
+        leaf.style.animationDelay = `${Math.random() * 5}s`;
+        leaf.style.animationDuration = `${4 + Math.random() * 3}s`;
+        container.appendChild(leaf);
+      }
+    }
+
+    function startTimer() {
+      timer = setInterval(() => {
+        time++;
+        timerDisplay.textContent = time + "s";
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timer);
+    }
+
+    function showMessage() {
+      const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+      messageBox.textContent = randomMsg;
+      messageBox.classList.add("pop");
+      setTimeout(() => messageBox.classList.remove("pop"), 800);
+    }
+
+    function createBoard() {
+      board.innerHTML = "";
+      grid.forEach((item) => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.dataset.name = item.name;
+
+        card.innerHTML = `
+          <div class="front"></div>
+          <div class="back">${item.symbol}</div>
+        `;
+        board.appendChild(card);
+      });
+    }
+
+    function flipCard() {
+      if (lockBoard) return;
+      if (this === firstCard) return;
+
+      this.classList.add("flip");
+
+      if (!firstCard) {
+        firstCard = this;
+        return;
+      }
+
+      secondCard = this;
+      moves++;
+      movesDisplay.textContent = moves;
+      checkForMatch();
+    }
+
+    function checkForMatch() {
+      let isMatch = firstCard.dataset.name === secondCard.dataset.name;
+      isMatch ? matchFound() : unflipCards();
+    }
+
+    function matchFound() {
+      firstCard.removeEventListener("click", flipCard);
+      secondCard.removeEventListener("click", flipCard);
+      firstCard.classList.add("matched");
+      secondCard.classList.add("matched");
+      matched++;
+      showMessage();
+      resetBoard();
+      if (matched === icons.length) {
+        stopTimer();
+        setTimeout(() => winScreen.style.display = "flex", 1000);
+      }
+    }
+
+    function unflipCards() {
+      lockBoard = true;
+      setTimeout(() => {
+        firstCard.classList.remove("flip");
+        secondCard.classList.remove("flip");
+        resetBoard();
+      }, 900);
+    }
+
+    function resetBoard() {
+      [firstCard, secondCard, lockBoard] = [null, null, false];
+    }
+
+    document.getElementById("start-btn").addEventListener("click", () => {
+      startScreen.style.display = "none";
+      createBoard();
+      createParticles();
+      startTimer();
+      document.querySelectorAll(".card").forEach(card => card.addEventListener("click", flipCard));
+    });
+
+    document.getElementById("restart-btn").addEventListener("click", () => location.reload());
+  </script>
+</body>
+</html>
